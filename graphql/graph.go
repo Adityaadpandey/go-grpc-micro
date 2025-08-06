@@ -1,9 +1,11 @@
 package main
 
+import "github.com/99designs/gqlgen/graphql"
+
 type Server struct {
-	// accountUrl *account.Client
-	// catalogUrl *catalog.Client
-	// orderUrl   *order.Client
+	// accountClient *account.Client
+	// catalogClient *catalog.Client
+	// orderClient   *order.Client
 }
 
 func NewGraphQLServer(accountUrl, catalogUrl, orderUrl string) (*Server, error) {
@@ -18,6 +20,7 @@ func NewGraphQLServer(accountUrl, catalogUrl, orderUrl string) (*Server, error) 
 	if err != nil {
 		accountClient.Close()
 		return nil, err
+
 	}
 
 	orderClient, err := order.NewClient(orderUrl)
@@ -45,4 +48,16 @@ func (s *Server) Query() QueryResolver {
 	return &queryResolver{
 		server: s,
 	}
+}
+
+func (s *Server) Account() AccountResolver {
+	return &accountResolver{
+		server: s,
+	}
+}
+
+func (s *Server) ToExecutableSchema() graphql.ExecutableSchema {
+	return NewExecutableSchema(Config{
+		Resolvers: s,
+	})
 }

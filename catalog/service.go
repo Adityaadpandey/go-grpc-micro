@@ -10,7 +10,7 @@ type Service interface {
 	PostProduct(ctx context.Context, name, description string, price float64) (*Product, error)
 	GetProduct(ctx context.Context, id string) (*Product, error)
 	GetProducts(ctx context.Context, skip, take uint64) ([]Product, error)
-	GetProductByIDs(ctx context.Context, ids []string) ([]Product, error)
+	GetProductsByIDs(ctx context.Context, ids []string) ([]Product, error)
 	SearchProducts(ctx context.Context, query string, skip, take uint64) ([]Product, error)
 }
 
@@ -53,7 +53,7 @@ func (s *catalogService) GetProducts(ctx context.Context, skip, take uint64) ([]
 	return s.respository.ListProducts(ctx, skip, take)
 }
 
-func (s *catalogService) GetProductByIDs(ctx context.Context, ids []string) ([]Product, error) {
+func (s *catalogService) GetProductsByIDs(ctx context.Context, ids []string) ([]Product, error) {
 	return s.respository.ListProductsWithIDs(ctx, ids)
 }
 

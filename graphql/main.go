@@ -1,3 +1,4 @@
+//go:generate go run github.com/99designs/gqlgen
 package main
 
 import (
@@ -10,25 +11,25 @@ import (
 )
 
 type AppConfig struct {
-	AccountURL string `envconfig:"ACCOUNT_URL"`
-	CatalogUrl string `envconfig:"CATALOG_URL"`
-	OrderURL   string `envconfig:"ORDER_URL"`
+	AccountURL string `envconfig:"ACCOUNT_SERVICE_URL"`
+	CatalogURL string `envconfig:"CATALOG_SERVICE_URL"`
+	OrderURL   string `envconfig:"ORDER_SERVICE_URL"`
 }
 
 func main() {
 	var cfg AppConfig
 	err := envconfig.Process("", &cfg)
 	if err != nil {
-		log.Fatalf("Failed to process env config: %v", err)
+		log.Fatal(err)
 	}
 
-	s, err := NewGraphQLServer(cfg.AccountURL, cfg.CatalogUrl, cfg.OrderURL)
+	s, err := NewGraphQLServer(cfg.AccountURL, cfg.CatalogURL, cfg.OrderURL)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	http.Handle("/graphql", handler.NewDefaultServer(s.ToExecutableSchema()))
-	http.Handle("/playground", playground.Handler("GraphQL Playground", "/graphql"))
+	http.Handle("/playground", playground.Handler("aditya", "/graphql"))
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
-
 }

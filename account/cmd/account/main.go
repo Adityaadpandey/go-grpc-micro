@@ -10,13 +10,14 @@ import (
 )
 
 type Config struct {
-	DatabaseURL string `env:"DATABASE_URL,required"`
+	DatabaseURL string `envconfig:"DATABASE_URL"`
 }
 
 func main() {
 	var cfg Config
-	if err := envconfig.Process("", &cfg); err != nil {
-		panic(err)
+	err := envconfig.Process("", &cfg)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	var r account.Repository
@@ -29,8 +30,7 @@ func main() {
 	})
 	defer r.Close()
 
-	log.Println("Listing on port 8080")
+	log.Println("Listening on port 8080...")
 	s := account.NewService(r)
 	log.Fatal(account.ListenGRPC(s, 8080))
-
 }

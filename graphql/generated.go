@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -54,7 +55,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateAccount func(childComplexity int, account AccoutInput) int
+		CreateAccount func(childComplexity int, account AccountInput) int
 		CreateOrder   func(childComplexity int, order OrderInput) int
 		CreateProduct func(childComplexity int, product ProductInput) int
 	}
@@ -62,7 +63,7 @@ type ComplexityRoot struct {
 	Order struct {
 		CreatedAt  func(childComplexity int) int
 		ID         func(childComplexity int) int
-		Prducts    func(childComplexity int) int
+		Products   func(childComplexity int) int
 		TotalPrice func(childComplexity int) int
 	}
 
@@ -91,7 +92,7 @@ type AccountResolver interface {
 	Orders(ctx context.Context, obj *Account) ([]*Order, error)
 }
 type MutationResolver interface {
-	CreateAccount(ctx context.Context, account AccoutInput) (*Account, error)
+	CreateAccount(ctx context.Context, account AccountInput) (*Account, error)
 	CreateProduct(ctx context.Context, product ProductInput) (*Product, error)
 	CreateOrder(ctx context.Context, order OrderInput) (*Order, error)
 }
@@ -150,7 +151,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateAccount(childComplexity, args["account"].(AccoutInput)), true
+		return e.complexity.Mutation.CreateAccount(childComplexity, args["account"].(AccountInput)), true
 
 	case "Mutation.createOrder":
 		if e.complexity.Mutation.CreateOrder == nil {
@@ -190,12 +191,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Order.ID(childComplexity), true
 
-	case "Order.prducts":
-		if e.complexity.Order.Prducts == nil {
+	case "Order.products":
+		if e.complexity.Order.Products == nil {
 			break
 		}
 
-		return e.complexity.Order.Prducts(childComplexity), true
+		return e.complexity.Order.Products(childComplexity), true
 
 	case "Order.totalPrice":
 		if e.complexity.Order.TotalPrice == nil {
@@ -299,7 +300,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
 	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
-		ec.unmarshalInputAccoutInput,
+		ec.unmarshalInputAccountInput,
 		ec.unmarshalInputOrderInput,
 		ec.unmarshalInputOrderProductInput,
 		ec.unmarshalInputPaginationInput,
@@ -423,7 +424,7 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 func (ec *executionContext) field_Mutation_createAccount_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "account", ec.unmarshalNAccoutInput2githubᚗcomᚋadityaadpandeyᚋgoᚑgrpcᚑmicroᚋgraphqlᚐAccoutInput)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "account", ec.unmarshalNAccountInput2githubᚗcomᚋadityaadpandeyᚋgoᚑgrpcᚑmicroᚋgraphqlᚐAccountInput)
 	if err != nil {
 		return nil, err
 	}
@@ -686,8 +687,8 @@ func (ec *executionContext) fieldContext_Account_orders(_ context.Context, field
 				return ec.fieldContext_Order_createdAt(ctx, field)
 			case "totalPrice":
 				return ec.fieldContext_Order_totalPrice(ctx, field)
-			case "prducts":
-				return ec.fieldContext_Order_prducts(ctx, field)
+			case "products":
+				return ec.fieldContext_Order_products(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -709,7 +710,7 @@ func (ec *executionContext) _Mutation_createAccount(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateAccount(rctx, fc.Args["account"].(AccoutInput))
+		return ec.resolvers.Mutation().CreateAccount(rctx, fc.Args["account"].(AccountInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -859,8 +860,8 @@ func (ec *executionContext) fieldContext_Mutation_createOrder(ctx context.Contex
 				return ec.fieldContext_Order_createdAt(ctx, field)
 			case "totalPrice":
 				return ec.fieldContext_Order_totalPrice(ctx, field)
-			case "prducts":
-				return ec.fieldContext_Order_prducts(ctx, field)
+			case "products":
+				return ec.fieldContext_Order_products(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -949,9 +950,9 @@ func (ec *executionContext) _Order_createdAt(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Order_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -961,7 +962,7 @@ func (ec *executionContext) fieldContext_Order_createdAt(_ context.Context, fiel
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Time does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1011,8 +1012,8 @@ func (ec *executionContext) fieldContext_Order_totalPrice(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_prducts(ctx context.Context, field graphql.CollectedField, obj *Order) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Order_prducts(ctx, field)
+func (ec *executionContext) _Order_products(ctx context.Context, field graphql.CollectedField, obj *Order) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Order_products(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1025,7 +1026,7 @@ func (ec *executionContext) _Order_prducts(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Prducts, nil
+		return obj.Products, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1042,7 +1043,7 @@ func (ec *executionContext) _Order_prducts(ctx context.Context, field graphql.Co
 	return ec.marshalNOrderedProduct2ᚕᚖgithubᚗcomᚋadityaadpandeyᚋgoᚑgrpcᚑmicroᚋgraphqlᚐOrderedProductᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Order_prducts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Order_products(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Order",
 		Field:      field,
@@ -3673,8 +3674,8 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputAccoutInput(ctx context.Context, obj any) (AccoutInput, error) {
-	var it AccoutInput
+func (ec *executionContext) unmarshalInputAccountInput(ctx context.Context, obj any) (AccountInput, error) {
+	var it AccountInput
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -4011,8 +4012,8 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "prducts":
-			out.Values[i] = ec._Order_prducts(ctx, field, obj)
+		case "products":
+			out.Values[i] = ec._Order_products(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -4635,8 +4636,8 @@ func (ec *executionContext) marshalNAccount2ᚖgithubᚗcomᚋadityaadpandeyᚋg
 	return ec._Account(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNAccoutInput2githubᚗcomᚋadityaadpandeyᚋgoᚑgrpcᚑmicroᚋgraphqlᚐAccoutInput(ctx context.Context, v any) (AccoutInput, error) {
-	res, err := ec.unmarshalInputAccoutInput(ctx, v)
+func (ec *executionContext) unmarshalNAccountInput2githubᚗcomᚋadityaadpandeyᚋgoᚑgrpcᚑmicroᚋgraphqlᚐAccountInput(ctx context.Context, v any) (AccountInput, error) {
+	res, err := ec.unmarshalInputAccountInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -4888,6 +4889,22 @@ func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) 
 func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	_ = sel
 	res := graphql.MarshalString(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v any) (time.Time, error) {
+	res, err := graphql.UnmarshalTime(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalTime(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")

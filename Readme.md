@@ -313,3 +313,16 @@ If you plan to use or distribute this code, please contact the author for clarif
 ---
 
 ## 🛠️ Built with passion by **NOVA** 💙 — a product by *Aditya*
+
+
+
+
+
+
+
+
+
+
+sudo docker compose logs frontend --tail=50
+  sudo docker compose logs graphql --tail=20
+  sudo docker compose logs account --tail=20

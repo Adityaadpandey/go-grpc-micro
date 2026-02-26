@@ -54,7 +54,9 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     "base-uri 'self'",
     "form-action 'self'",
     "object-src 'none'",
-    "upgrade-insecure-requests",
+    ...(request.headers.get("x-forwarded-proto") === "https"
+      ? ["upgrade-insecure-requests"]
+      : []),
   ].join("; ");
 
   // Helper to inject our headers into any NextResponse

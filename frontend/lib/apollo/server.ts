@@ -5,7 +5,7 @@
  */
 
 const GRAPHQL_URL =
-  process.env.GRAPHQL_URL ?? "http://localhost:8000/graphql";
+  process.env.GRAPHQL_URL ?? "http://localhost:8080/graphql";
 
 interface GraphQLResponse<T> {
   data?: T;

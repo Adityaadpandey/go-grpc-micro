@@ -1,24 +1,25 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
+import {
+    ClipboardList,
+    LayoutDashboard,
+    LogOut,
+    Menu,
+    Shield,
+    ShoppingBag,
+    Store,
+    Users,
+    X,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Users,
-  ShoppingBag,
-  ClipboardList,
-  LogOut,
-  Shield,
-  Menu,
-  X,
-} from "lucide-react";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/hooks/use-auth";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 const navItems = [
   {
@@ -45,6 +46,12 @@ const navItems = [
     icon: ClipboardList,
     roles: ["admin", "user"],
   },
+  {
+    label: "Store",
+    href: "/store",
+    icon: Store,
+    roles: ["admin", "user"],
+  },
 ];
 
 export function DashboardSidebar() {
@@ -56,7 +63,7 @@ export function DashboardSidebar() {
     (item) => !user || item.roles.includes(user.role)
   );
 
-  const SidebarContent = () => (
+  const sidebarContent = (
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className="flex items-center gap-2 px-6 py-5">
@@ -137,7 +144,7 @@ export function DashboardSidebar() {
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-64 shrink-0 flex-col border-r bg-sidebar">
-        <SidebarContent />
+        {sidebarContent}
       </aside>
 
       {/* Mobile toggle */}
@@ -160,7 +167,7 @@ export function DashboardSidebar() {
             onClick={() => setMobileOpen(false)}
           />
           <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r md:hidden">
-            <SidebarContent />
+            {sidebarContent}
           </aside>
         </>
       )}

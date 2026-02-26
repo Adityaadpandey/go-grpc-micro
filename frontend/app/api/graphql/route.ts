@@ -17,7 +17,7 @@ import { verifyToken } from "@/lib/auth/jwt";
 import { cookies } from "next/headers";
 
 const GRAPHQL_URL =
-  process.env.GRAPHQL_URL ?? "http://localhost:8000/graphql";
+  process.env.GRAPHQL_URL ?? "http://localhost:8080/graphql";
 
 // ── Config ────────────────────────────────────────────────────────────────
 const MAX_DEPTH = 5;

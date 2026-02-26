@@ -2,26 +2,6 @@ import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV === "development";
 
-/**
- * Content Security Policy.
- * Inline styles needed by Tailwind v4; nonces injected in middleware for scripts.
- */
-const cspDirectives = [
-  "default-src 'self'",
-  isDev
-    ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'"
-    : "script-src 'self'",
-  "style-src 'self' 'unsafe-inline'", // Tailwind requires this
-  "img-src 'self' data: blob:",
-  "font-src 'self'",
-  "connect-src 'self'",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "object-src 'none'",
-  "upgrade-insecure-requests",
-].join("; ");
-
 const securityHeaders = [
   { key: "X-DNS-Prefetch-Control", value: "on" },
   {
@@ -36,7 +16,6 @@ const securityHeaders = [
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
   },
-  { key: "Content-Security-Policy", value: cspDirectives },
 ];
 
 const nextConfig: NextConfig = {

@@ -1,6 +1,7 @@
 "use client";
 
-import { ShoppingBag } from "lucide-react";
+import { ShoppingCart, Check } from "lucide-react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -9,13 +10,24 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { Product } from "@/types/graphql";
+import { useCartStore } from "@/store/cart-store";
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const addItem = useCartStore((s) => s.addItem);
+  const [added, setAdded] = useState(false);
+
+  const handleAddToCart = () => {
+    addItem(product);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
+  };
+
   return (
     <Card className="flex flex-col transition-shadow hover:shadow-md">
       <CardHeader className="pb-3">
@@ -32,10 +44,24 @@ export function ProductCard({ product }: ProductCardProps) {
         </p>
       </CardContent>
       <CardFooter className="pt-3">
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <ShoppingBag className="h-3 w-3" />
-          <span className="font-mono">{product.id.slice(0, 8)}…</span>
-        </div>
+        <Button
+          size="sm"
+          variant={added ? "secondary" : "default"}
+          className="w-full gap-2 transition-all"
+          onClick={handleAddToCart}
+        >
+          {added ? (
+            <>
+              <Check className="h-4 w-4" />
+              Added!
+            </>
+          ) : (
+            <>
+              <ShoppingCart className="h-4 w-4" />
+              Add to Cart
+            </>
+          )}
+        </Button>
       </CardFooter>
     </Card>
   );

@@ -1,22 +1,46 @@
-version: "3.7"
-
 services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - '80:80'
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - GRAPHQL_URL=http://graphql:8080/graphql
+      - JWT_SECRET=${JWT_SECRET:-your-super-strong-jwt-secret-string-32-chars}
+    depends_on:
+      - graphql
+    restart: on-failure
+
   account:
     build:
       context: .
       dockerfile: ./account/app.dockerfile
     depends_on:
-      - account_db
+      account_db:
+        condition: service_healthy
     environment:
-      DATABASE_URL: postgres://aditya:123456@account_db/aditya?sslmode=disable
+      DATABASE_URL: postgres://aditya:123456@account_db:5432/aditya?sslmode=disable
     restart: on-failure
+    # Port 8080 is inherently exposed to the internal Docker network natively,
+    # but not published to the external host to prevent bypassing the Nginx Edge.
 
   catalog:
     build:
       context: .
       dockerfile: ./catalog/app.dockerfile
     depends_on:
-      - catalog_db
+      catalog_db:
+        condition: service_healthy
     environment:
       DATABASE_URL: http://catalog_db:9200
     restart: on-failure
@@ -26,11 +50,14 @@ services:
       context: .
       dockerfile: ./order/app.dockerfile
     depends_on:
-      - order_db
-      - account
-      - catalog
+      order_db:
+        condition: service_healthy
+      account:
+        condition: service_started
+      catalog:
+        condition: service_started
     environment:
-      DATABASE_URL: postgres://aditya:123456@order_db/aditya?sslmode=disable
+      DATABASE_URL: postgres://aditya:123456@order_db:5432/aditya?sslmode=disable
       ACCOUNT_SERVICE_URL: account:8080
       CATALOG_SERVICE_URL: catalog:8080
     restart: on-failure
@@ -40,10 +67,11 @@ services:
       context: .
       dockerfile: ./graphql/app.dockerfile
     ports:
-      - 8000:8080
+      - "8080:8080"
     depends_on:
       - account
       - catalog
+      - order
     environment:
       ACCOUNT_SERVICE_URL: account:8080
       CATALOG_SERVICE_URL: catalog:8080
@@ -58,13 +86,14 @@ services:
       POSTGRES_DB: aditya
       POSTGRES_USER: aditya
       POSTGRES_PASSWORD: 123456
+    volumes:
+      - account_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U aditya']
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
-
-  catalog_db:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.2.4
-    environment:
-      ES_JAVA_OPTS: -Xms1g -Xmx1g
-      discovery.type: single-node
 
   order_db:
     build:
@@ -74,4 +103,31 @@ services:
       POSTGRES_DB: aditya
       POSTGRES_USER: aditya
       POSTGRES_PASSWORD: 123456
+    volumes:
+      - order_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U aditya']
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
+
+  catalog_db:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.2.4
+    platform: linux/amd64
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - catalog_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:9200 || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  account_data:
+  order_data:
+  catalog_data:

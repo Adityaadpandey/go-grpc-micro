@@ -1,15 +1,42 @@
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import { serverGraphQL } from "@/lib/apollo/server";
 import { createCredential, credentialExists } from "@/lib/auth/auth-store";
 import {
-  signToken,
   AUTH_COOKIE_OPTIONS,
   CSRF_COOKIE_OPTIONS,
+  REFRESH_COOKIE_OPTIONS,
+  signRefreshToken,
+  signToken,
 } from "@/lib/auth/jwt";
-import { generateCsrfToken } from "@/lib/security/csrf";
-import { serverGraphQL } from "@/lib/apollo/server";
 import { CREATE_ACCOUNT_MUTATION } from "@/lib/graphql/mutations";
+import { generateCsrfToken } from "@/lib/security/csrf";
 import type { CreateAccountMutationResult } from "@/types/graphql";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+
+// ── Rate Limiter ────────────────────────────────────────────────────────────
+const registerRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const REGISTER_RATE_LIMIT_WINDOW = 60_000 * 15; // 15 mins
+const REGISTER_RATE_LIMIT_MAX = 5; // max 5 attempts per 15 mins
+
+function checkRegisterRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = registerRateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    registerRateLimitMap.set(ip, { count: 1, resetAt: now + REGISTER_RATE_LIMIT_WINDOW });
+    return true;
+  }
+  if (entry.count >= REGISTER_RATE_LIMIT_MAX) return false;
+  entry.count++;
+  return true;
+}
+
+// Clean up map every 15 mins
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, val] of registerRateLimitMap.entries()) {
+    if (now > val.resetAt) registerRateLimitMap.delete(key);
+  }
+}, 15 * 60 * 1000);
 
 // ── Input validation ────────────────────────────────────────────────────────
 const RegisterSchema = z.object({
@@ -26,6 +53,17 @@ const RegisterSchema = z.object({
 });
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  // Rate limiting
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+    request.headers.get("x-real-ip") || "unknown";
+
+  if (!checkRegisterRateLimit(ip)) {
+    return NextResponse.json(
+      { error: "Too many registration attempts. Try again later." },
+      { status: 429, headers: { "Retry-After": String(REGISTER_RATE_LIMIT_WINDOW / 1000) } }
+    );
+  }
+
   // Only accept JSON
   const contentType = request.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) {
@@ -91,9 +129,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // Issue JWT + CSRF token
+  // Issue JWT + CSRF token + Refresh Token
   const csrf = generateCsrfToken();
   const token = await signToken({ sub: accountId, name, role, csrf });
+  const refreshToken = await signRefreshToken(accountId);
 
   const response = NextResponse.json(
     { user: { id: accountId, name, role } },
@@ -102,6 +141,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   response.cookies.set(AUTH_COOKIE_OPTIONS.name, token, AUTH_COOKIE_OPTIONS);
   response.cookies.set(CSRF_COOKIE_OPTIONS.name, csrf, CSRF_COOKIE_OPTIONS);
+  response.cookies.set(REFRESH_COOKIE_OPTIONS.name, refreshToken, REFRESH_COOKIE_OPTIONS);
 
   return response;
 }

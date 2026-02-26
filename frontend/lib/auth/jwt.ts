@@ -2,21 +2,34 @@
  * JWT utilities – Edge runtime compatible (uses jose).
  * All token operations are server-side only.
  */
-import { SignJWT, jwtVerify, type JWTPayload } from "jose";
-import { randomUUID } from "crypto";
 import type { Role, SessionPayload } from "@/types/auth";
+import { randomUUID } from "crypto";
+import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 
-/** Token lifespan: 7 days */
-const TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
+/** Access token lifespan: 15 minutes */
+const ACCESS_TOKEN_TTL = 15 * 60;
 
-/** Cookie configuration for the auth token */
+/** Refresh token lifespan: 7 days */
+const REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60;
+
+/** Cookie configuration for the short-lived access token */
 export const AUTH_COOKIE_OPTIONS = {
   name: "auth-token",
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: "strict" as const,
   path: "/",
-  maxAge: TOKEN_TTL_SECONDS,
+  maxAge: ACCESS_TOKEN_TTL,
+};
+
+/** Cookie configuration for the long-lived refresh token */
+export const REFRESH_COOKIE_OPTIONS = {
+  name: "refresh-token",
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict" as const,
+  path: "/api/auth/refresh", // Only sent to the refresh endpoint
+  maxAge: REFRESH_TOKEN_TTL,
 };
 
 /** Cookie for CSRF double-submit pattern (NOT httpOnly so JS can read it) */
@@ -26,7 +39,7 @@ export const CSRF_COOKIE_OPTIONS = {
   secure: process.env.NODE_ENV === "production",
   sameSite: "strict" as const,
   path: "/",
-  maxAge: TOKEN_TTL_SECONDS,
+  maxAge: ACCESS_TOKEN_TTL, // Tied to access token lifetime
 };
 
 /** Lazy-evaluated JWT secret to avoid module-load errors during build */
@@ -56,7 +69,17 @@ export async function signToken(payload: {
     .setSubject(payload.sub)
     .setJti(randomUUID())
     .setIssuedAt()
-    .setExpirationTime(`${TOKEN_TTL_SECONDS}s`)
+    .setExpirationTime(`${ACCESS_TOKEN_TTL}s`)
+    .sign(getJwtSecret());
+}
+
+export async function signRefreshToken(sub: string): Promise<string> {
+  return new SignJWT({ type: "refresh" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setSubject(sub)
+    .setJti(randomUUID())
+    .setIssuedAt()
+    .setExpirationTime(`${REFRESH_TOKEN_TTL}s`)
     .sign(getJwtSecret());
 }
 

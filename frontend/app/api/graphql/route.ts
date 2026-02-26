@@ -124,9 +124,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const payload = jwtToken ? await verifyToken(jwtToken) : null;
   const csrfHeader = request.headers.get("X-CSRF-Token");
 
-  console.log("[graphql/csrf] header present:", !!csrfHeader, "| header length:", csrfHeader?.length ?? 0, "| jwt.csrf present:", !!(payload as Record<string, unknown>)?.csrf);
+  const jwtCsrf = String((payload as Record<string, unknown>)?.csrf ?? "");
+  console.log("[graphql/csrf] header:", csrfHeader?.slice(0, 8), "| jwt.csrf:", jwtCsrf.slice(0, 8), "| match:", csrfHeader === jwtCsrf);
 
-  if (!validateCsrf(csrfHeader, payload?.csrf ?? null)) {
+  if (!validateCsrf(csrfHeader, jwtCsrf || null)) {
     return NextResponse.json(
       { errors: [{ message: "CSRF validation failed" }] },
       { status: 403 }

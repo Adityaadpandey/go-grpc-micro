@@ -1,13 +1,13 @@
+import { getUserFromCookie } from "@/lib/session";
 import { NextRequest, NextResponse } from "next/server";
 import Razorpay from "razorpay";
-import { getUserFromCookie } from "@/lib/session";
-
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID ?? "",
-  key_secret: process.env.RAZORPAY_KEY_SECRET ?? "",
-});
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID ?? "",
+    key_secret: process.env.RAZORPAY_KEY_SECRET ?? "",
+  });
+
   // Auth check
   const user = await getUserFromCookie();
   if (!user) {

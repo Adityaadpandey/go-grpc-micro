@@ -43,12 +43,13 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   const cspDirectives = [
     "default-src 'self'",
     process.env.NODE_ENV === "development"
-      ? `script-src 'self' 'nonce-${nonce}' 'unsafe-eval'` // Next.js dev requires unsafe-eval
-      : `script-src 'self' 'nonce-${nonce}'`,
+      ? `script-src 'self' 'nonce-${nonce}' 'unsafe-eval' https://checkout.razorpay.com` // Next.js dev requires unsafe-eval
+      : `script-src 'self' 'nonce-${nonce}' https://checkout.razorpay.com`,
     "style-src 'self' 'unsafe-inline'", // Tailwind requires unsafe-inline (or extensive config)
-    "img-src 'self' data: blob:",
+    "img-src 'self' data: blob: https://checkout.razorpay.com",
     "font-src 'self'",
-    "connect-src 'self'",
+    "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com",
+    "frame-src https://api.razorpay.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

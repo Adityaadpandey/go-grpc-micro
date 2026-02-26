@@ -19,6 +19,9 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
       - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - SECURE_COOKIES=${SECURE_COOKIES:-false}
+    volumes:
+      - frontend_data:/app/data
     depends_on:
       - graphql
     restart: on-failure
@@ -133,3 +136,4 @@ volumes:
   account_data:
   order_data:
   catalog_data:
+  frontend_data:

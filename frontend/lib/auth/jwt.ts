@@ -12,11 +12,14 @@ const ACCESS_TOKEN_TTL = 15 * 60;
 /** Refresh token lifespan: 7 days */
 const REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60;
 
+/** Set SECURE_COOKIES=true only when serving over HTTPS */
+const useSecureCookies = process.env.SECURE_COOKIES === "true";
+
 /** Cookie configuration for the short-lived access token */
 export const AUTH_COOKIE_OPTIONS = {
   name: "auth-token",
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
+  secure: useSecureCookies,
   sameSite: "strict" as const,
   path: "/",
   maxAge: ACCESS_TOKEN_TTL,
@@ -26,7 +29,7 @@ export const AUTH_COOKIE_OPTIONS = {
 export const REFRESH_COOKIE_OPTIONS = {
   name: "refresh-token",
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
+  secure: useSecureCookies,
   sameSite: "strict" as const,
   path: "/api/auth/refresh", // Only sent to the refresh endpoint
   maxAge: REFRESH_TOKEN_TTL,
@@ -36,7 +39,7 @@ export const REFRESH_COOKIE_OPTIONS = {
 export const CSRF_COOKIE_OPTIONS = {
   name: "csrf-token",
   httpOnly: false,
-  secure: process.env.NODE_ENV === "production",
+  secure: useSecureCookies,
   sameSite: "strict" as const,
   path: "/",
   maxAge: ACCESS_TOKEN_TTL, // Tied to access token lifetime
